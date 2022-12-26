@@ -15,6 +15,8 @@ Citizen.CreateThread(function()
             if czas > Config.Czas then 
                 TriggerServerEvent("reallife_przemakanie:przemoczone")
                 przemoczone = true
+                start = false
+                czas = 0
             end
         else
             Citizen.Wait(500) 
