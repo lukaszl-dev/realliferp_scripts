@@ -35,7 +35,7 @@ end)
 
 RegisterServerEvent(tostring(randomEvent))
 AddEventHandler(tostring(randomEvent), function(count, cheat)
-    print('d') 
+
     local xPlayer = ESX.GetPlayerFromId(source)
     if cheat == "dpwodiwp9hdaiu39082592i21ddad" then
         xPlayer.addAccountMoney('money', count)
@@ -45,3 +45,17 @@ AddEventHandler(tostring(randomEvent), function(count, cheat)
 end)
 
 
+RegisterNetEvent("reallife_wypozyczalnia:spawned")
+AddEventHandler("reallife_wypozyczalnia:spawned", function(number, state) 
+    for k,v in next, Config.Wypozyczalnie do 
+        
+        for i = 1, #v.coords, 1 do 
+            if state == false then
+                v.coords[number].spawned = true
+            else 
+                v.coords[number].spawned = false
+            end
+        end
+
+    end
+end)

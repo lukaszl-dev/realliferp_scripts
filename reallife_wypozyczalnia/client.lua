@@ -30,29 +30,37 @@ Citizen.CreateThread(function()
                     	
                         if IsControlJustReleased(0, 74) then
                             if rentedvehicle ==  nil then 
-                                ESX.TriggerServerCallback("reallife_wypozyczalnia:checkMoeny", function(can) 
-                                    if can then
-                                        v.coords[i].used = true
-                                        ESX.ShowNotification("Wypożyczyłeś auto, pobrana kaucja to: "..v.coords[i].caution.."!")
-                                        ESX.ShowHelpNotification("Nie zniszcz auta a po zakończeniu dostarcz go do Pana Mietka! On się zajmie autem!")
-                                        local vehicle = ESX.Game.GetClosestVehicle(pos)
-                                        rentedvehicle = vehicle
-                                        rentedvehicleid = i
-                                        rentedvehiclemodel = GetHashKey(v.coords[i].model)
-                                        rentedvehicleplate = GetVehicleNumberPlateText(vehicle)
-                                        rentedvehiclecaution = v.coords[i].caution
-                                        SetPedIntoVehicle(ped, vehicle, -1)
-                                        SetVehicleDoorsLocked(vehicle, 1)
-                                        SetVehicleDoorsLockedForAllPlayers(vehicle, false)
-                                        FreezeEntityPosition(vehicle, false)
-                                        wypozyczone = true
-                                        local plate = GetVehicleNumberPlateText(vehicle)
-                                        TriggerServerEvent("reallife_carcfg-addkeys", plate)
-                                        priceperframe =  v.coords[i].price_per_s
+                                ESX.TriggerServerCallback("esx_license:checkLicense", function(have) 
+                                    if have then 
+                                        ESX.TriggerServerCallback("reallife_wypozyczalnia:checkMoeny", function(can) 
+                                            if can then
+                                                v.coords[i].used = true
+                                                ESX.ShowNotification("Wypożyczyłeś auto, pobrana kaucja to: "..v.coords[i].caution.."!")
+                                                ESX.ShowHelpNotification("Nie zniszcz auta a po zakończeniu dostarcz go do Pana Mietka! On się zajmie autem!")
+                                                local vehicle = ESX.Game.GetClosestVehicle(pos)
+                                                rentedvehicle = vehicle
+                                                rentedvehicleid = i
+                                                rentedvehiclemodel = GetHashKey(v.coords[i].model)
+                                                rentedvehicleplate = GetVehicleNumberPlateText(vehicle)
+                                                rentedvehiclecaution = v.coords[i].caution
+                                                SetPedIntoVehicle(ped, vehicle, -1)
+                                                SetVehicleDoorsLocked(vehicle, 1)
+                                                SetVehicleDoorsLockedForAllPlayers(vehicle, false)
+                                                FreezeEntityPosition(vehicle, false)
+                                                wypozyczone = true
+                                                local plate = GetVehicleNumberPlateText(vehicle)
+                                                TriggerServerEvent("reallife_carcfg-addkeys", plate)
+                                                priceperframe =  v.coords[i].price_per_s
+                                            else 
+                                                ESX.ShowNotification("Zapraszamy ponownie później!")
+                                            end 
+                                        end, v.coords[i].caution)
                                     else 
-                                        ESX.ShowNotification("Zapraszamy ponownie później!")
-                                    end 
-                                end, v.coords[i].caution)
+                                        ESX.ShowNotification("Musisz posiadać prawo jazdy kategorii B!")
+                                    end
+                                
+                                end, GetPlayerServerId(PlayerId()), 'drive')
+                                
                             else 
                                 ESX.ShowNotification("Masz już wypożyczone auto!")
                             end 
@@ -60,8 +68,9 @@ Citizen.CreateThread(function()
                     end 
 
                     if ESX.Game.IsSpawnPointClear(v.coords[i].crds, 2.5) and not v.coords[i].used and not v.coords[i].spawned then 
-                        v.coords[i].spawned = true
-                     
+                        --  aby to bylo oznaczeniem serverowym nie klienckim bo inaczeej respia się auta razy tyle ile jest graczy!
+                        -- v.coords[i].spawned = true
+                        TriggerServerEvent("reallife_wypozyczalnia:spawned", i, false)
                         spawn(v.coords[i].model, v.coords[i].crds, v.coords[i].h)
                     end
                  
@@ -96,7 +105,6 @@ Citizen.CreateThread(function()
              
                 --  vehicle event's
                 SetVehicleDoorsLocked(rentedvehicle, 2)
-                SetVehicleNumberPlateText(rentedvehicle, "RENTED")
                 SetEntityAsMissionEntity(rentedvehicle, true, true)
                 FreezeEntityPosition(rentedvehicle, true)
                 -- to-do remove keys from player inventory !
@@ -173,7 +181,7 @@ end)
 -- target events 
 RegisterNetEvent("reallife_wypozyczalnia:wypozyczenie")
 AddEventHandler("reallife_wypozyczalnia:wypozyczenie", function() 
-    ESX.ShowNotification("Cześć, wszystko mamy zautomatyzowane - po prostu wybierz swój pojazd i wejdź, reszte obsłuży nasz system!")
+    ESX.ShowNotification("Cześć, wszystko mamy zautomatyzowane - po prostu wybierz swój pojazd, my sprawdzimy czy masz prawo jazdy  i już możesz jechać!, wszystko obsłuży nasz system!")
 end)
 
 
@@ -193,7 +201,8 @@ AddEventHandler("reallife_wypozyczalnia:zdajauto", function()
         for k,v in next, Config.Wypozyczalnie do 
             for i = 1, #v.coords, 1 do 
                 v.coords[rentedvehicleid].used = false
-                v.coords[rentedvehicleid].spawned = false
+                -- v.coords[rentedvehicleid].spawned = false
+                TriggerServerEvent("reallife_wypozyczalnia:spawned", rentedvehicleid, true)
             end
         end
         ESX.ShowNotification("Zdałeś auto! Kaucja wraca do Ciebie!")
